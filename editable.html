@@ -1,0 +1,314 @@
+<!DOCTYPE html><html class="" lang=""><head><script type="text/javascript" class="silex-json-styles" data-silex-static="">
+    window.silex = window.silex || {}
+    window.silex.data = {"site":{"width":1200},"pages":[{"id":"page-page-1","displayName":"Page 1","link":{"linkType":"LinkTypePage","href":"#!page-page-1"},"canDelete":true,"canProperties":true,"canMove":true,"canRename":true,"opened":false}]}</script>
+    <meta charset="UTF-8">
+    <!-- generator meta tag -->
+    <!-- leave this for stats and Silex version check -->
+    <meta name="generator" content="Silex v2.2.14">
+    <!-- End of generator meta tag -->
+    <script type="text/javascript" src="https://editor.silex.me/static/2.12/jquery.js" data-silex-static=""></script>
+    <script type="text/javascript" src="https://editor.silex.me/static/2.12/jquery-ui.js" data-silex-static="" data-silex-remove-publish=""></script>
+    <script type="text/javascript" src="https://editor.silex.me/static/2.12/pageable.js" data-silex-static="" data-silex-remove-publish=""></script>
+    <script type="text/javascript" src="https://editor.silex.me/static/2.12/front-end.js" data-silex-static=""></script>
+    <link rel="stylesheet" href="https://editor.silex.me/static/2.12/normalize.css" data-silex-static="">
+    <link rel="stylesheet" href="https://editor.silex.me/static/2.12/front-end.css" data-silex-static="">
+
+    <style class="silex-style"></style>
+    <script type="text/javascript" class="silex-script">function Enemy(x,y,w,h,moveX){
+	this.x = x;
+	this.y = y;
+	this.w = w;
+	this.h = h;
+	this.speedX = 1;
+	this.speedY = 1;
+	this.dead = false;
+
+	this.show = function(){
+		ctx.fillRect(this.x, this.y, this.w, this.h);
+	}
+
+	this.update = function(){
+		if(this.dead == true){
+			ctx.clearRect(this.x, this.y, this.w, this.h);		
+		}
+		else{
+			this.show();
+		}		
+
+		this.move();
+
+	}
+
+	this.move = function(){
+		this.x += this.speedX;
+		if(this.x > canvas.width - this.w){
+			this.speedX = -this.speedX;
+		}
+		else if (this.x < 0){
+			this.speedX = -this.speedX;
+		}
+		
+		this.y += this.speedY;
+		if(this.y > canvas.height - this.h){
+			this.speedY = -this.speedY;
+		}
+		else if (this.y < 0){
+			this.speedY = -this.speedY;
+		}
+		
+	}
+
+}
+
+function Bullet(x,y,w,h,up,down,left,right, sprite){
+	this.x = x;
+	this.y = y;
+	this.w = w;
+	this.h = h;
+	this.hit = false;
+	this.show = function(){
+		if(sprite == null){
+			ctx.fillRect(this.x,this.y,this.w,this.h);
+		}
+		else{
+			let img = new Image();
+			img.src = sprite;
+			ctx.drawImage(img,this.x,this.y,this.w,this.h)
+		}
+	}
+
+	this.moveX = function(dir){
+		this.x += dir;
+	}
+
+	this.moveY = function(dir){
+		this.y += dir;
+	}
+
+	this.update = function(){
+		this.show();
+		if(up) this.moveY(-5);
+		if(down) this.moveY(5);
+		if(left) this.moveX(-5);
+		if(right) this.moveX(5);
+	}
+
+	this.clear = function(){
+		ctx.clearRect(this.x,this.y,this.w,this.h);
+	}
+}
+
+function Player(x, y, w, h, sprite){
+	this.x = x;
+	this.y = y;
+	this.w = w;
+	this.h = h;
+	this.show = function(){
+		if(sprite == null){
+			ctx.fillRect(this.x,this.y,this.w,this.h);
+		}
+		else {
+			let img = new Image();
+			img.src = sprite;
+			ctx.drawImage(img,this.x,this.y,this.w,this.h);
+		}
+	}
+
+	this.moveX = function(moveX){
+		this.x += moveX;
+	}
+
+	this.moveY = function(moveY){
+		this.y += moveY;
+	}
+	this.wallCollide = function(){
+		if(this.x <= 0) this.x = 0;
+		else if(this.x >= canvas.width - this.w) this.x = canvas.width - this.w;
+
+		if(this.y <= 0) this.y = 0;
+		else if(this.y >= canvas.height - this.h) this.y = canvas.height - this.h;
+	}
+	this.update = function(){
+		this.show();
+		this.wallCollide();
+		if(keys.up) player.moveY(-2);
+		if(keys.down) player.moveY(2);
+		if(keys.right) player.moveX(2);
+		if(keys.left) player.moveX(-2); 
+	}
+
+
+}
+
+
+let canvas = document.getElementById('mainCanv');
+let ctx = canvas.getContext('2d');
+let keys = {
+	up: false,
+	down: false,
+	left: false,
+	right: false
+};
+let player = new Player(canvas.width/2, canvas.height/2, 40, 40);
+let bullets = [];
+let enemy = [];
+let enemyCount = 3;
+let totalEnemy = enemyCount;
+let scoreNum = 0;
+
+for(let i = 0; i < enemyCount; i++){
+	enemy.push(new Enemy(Math.floor(Math.random()*canvas.width),Math.floor(Math.random()*canvas.height),20,20, Math.floor(Math.random()*2)));
+}
+function Update(){
+	ctx.clearRect(0,0, canvas.width, canvas.height);
+	drawScore();
+	player.update();
+
+	//Draw Enemies
+	for(let j = 0; j < enemy.length; j++){
+		enemy[j].update();
+		if(Collides(enemy[j], player)){
+			location.reload();
+		}
+	}
+	
+	if(enemyCount == 0){
+		enemyCount = totalEnemy;
+		totalEnemy += 1;
+		for(let i = 0; i < enemyCount; i++){
+			enemy.push(new Enemy(Math.floor(Math.random()*canvas.width),Math.floor(Math.random()*canvas.height),20,20, Math.floor(Math.random()*2)));
+		}
+		for(let j = 0; j < enemy.length; j++){
+			enemy[j].speedX += 1;
+			enemy[j].speedY += 1;
+		}
+	}
+
+
+	//Draw bullets
+	for(let i = 0; i < bullets.length; i++){
+		bullets[i].update();
+		if(bullets[i].x > canvas.width - bullets[i].w || bullets[i].x < 0){
+			bullets.splice(i,1);
+		}
+		for(let j = 0; j < enemy.length; j++){
+			if (Collides(bullets[i], enemy[j])){
+				bullets.splice(i,1);
+				enemy.splice(j,1);
+				enemyCount -= 1;
+				scoreNum +=  1;
+			}
+		}
+	}
+
+}
+
+
+window.addEventListener('keydown', function(event){
+	switch(event.keyCode){
+		case 87:
+			keys.up = true;
+			break;
+		case 83:
+			keys.down = true;
+			break;
+		case 68:
+			keys.right = true;
+			break;
+		case 65:
+			keys.left = true;
+			break;
+		case 38:
+			bullets.push(new Bullet(player.x+15, player.y+15, 5, 5,true,false,false,false));
+			break;
+		case 40:
+			bullets.push(new Bullet(player.x+15, player.y+15, 5, 5,false,true,false,false))
+			break;
+		case 37:
+			bullets.push(new Bullet(player.x+15, player.y+15, 5, 5,false,false,true,false))
+			break;
+		case 39:
+			bullets.push(new Bullet(player.x+15, player.y+15, 5, 5,false,false,false,true))
+
+	}
+});
+
+window.addEventListener('keyup', function(event){
+	switch(event.keyCode){
+		case 87:
+			keys.up = false;
+			break;
+		case 83:
+			keys.down = false;
+			break;
+		case 68:
+			keys.right = false;
+			break;
+		case 65:
+			keys.left = false;
+			break;
+	
+	}
+});
+
+function Collides(spriteOne, spriteTwo){
+	if(spriteOne.x > spriteTwo.x && spriteOne.x < spriteTwo.x+spriteTwo.w && spriteOne.y > spriteTwo.y && spriteOne.y < spriteTwo.y + spriteTwo.h){
+		return true;
+	}
+}
+
+
+
+function drawScore(){
+	let scoreText = document.getElementById('score').innerHTML = scoreNum + " Enemies Killed";
+}
+setInterval(Update, 1);</script>
+    <style class="silex-inline-styles">.body-initial {background-color: rgba(255,255,255,1); position: static;}.silex-id-1478366444112-1 {background-color: transparent; position: static; margin-top: -1px;}.silex-id-1478366444112-0 {background-color: transparent; min-height: 100px; position: relative; margin-left: auto; margin-right: auto;}.silex-id-1474394621033-3 {position: static; margin-top: -1px;}.silex-id-1474394621032-2 {background-color: transparent; min-height: 600px; position: relative; margin-left: auto; margin-right: auto;}.silex-id-1478366450713-3 {background-color: transparent; position: static; margin-top: -1px;}.silex-id-1478366450713-2 {background-color: transparent; min-height: 100px; position: relative; margin-left: auto; margin-right: auto;}.silex-id-1442914737143-3 {width: 241px; top: 26px; left: 494px; min-height: 51px; position: absolute;}@media only screen and (max-width: 480px) {}</style>
+    <title></title>
+    
+
+    
+<style class="silex-prodotype-style" data-style-id="all-style">.text-element > .silex-element-content {font-family: 'Roboto', sans-serif;}</style><link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" class="silex-custom-font"><meta name="viewport" content="width=device-width, initial-scale=1"><style class="silex-style-settings">.website-width {width: 1200px;}@media (min-width: 481px) {.silex-editor {min-width: 1400px;}}</style></head>
+
+<body data-silex-id="body-initial" class="body-initial all-style enable-mobile prevent-resizable prevent-selectable editable-style silex-runtime" data-silex-type="container-element" style="">
+    
+
+
+
+
+
+
+
+
+
+    <section data-silex-type="container-element" class="container-element editable-style silex-id-1478366444112-1 section-element prevent-resizable page-page-1 paged-element" data-silex-id="silex-id-1478366444112-1">
+        <div data-silex-type="container-element" class="editable-style silex-element-content silex-id-1478366444112-0 container-element website-width" data-silex-id="silex-id-1478366444112-0"></div>
+    </section>
+    <section data-silex-type="container-element" class="container-element editable-style silex-id-1474394621033-3 section-element prevent-resizable page-page-1 paged-element" data-silex-id="silex-id-1474394621033-3">
+        <div data-silex-type="container-element" class="editable-style silex-element-content silex-id-1474394621032-2 container-element website-width selected" data-silex-id="silex-id-1474394621032-2"></div>
+    </section>
+    <section data-silex-type="container-element" class="container-element editable-style silex-id-1478366450713-3 section-element prevent-resizable page-page-1 paged-element" data-silex-id="silex-id-1478366450713-3">
+        <div data-silex-type="container-element" class="editable-style silex-element-content silex-id-1478366450713-2 container-element website-width" data-silex-id="silex-id-1478366450713-2">
+
+            <div data-silex-id="silex-id-1442914737143-3" class="editable-style silex-id-1442914737143-3 text-element" data-silex-type="text-element">
+                <div class="silex-element-content normal"><p>Powered by <a href="https://www.silex.me/" target="_blank" title="Silex website builder,  free and open source" linktype="LinkTypeExternal">Silex website builder</a></p></div>
+            </div>
+        </div>
+    </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body></html>
